@@ -1,0 +1,17 @@
+    <target name="-post-jfx-jar" depends="-check-jfx-sdk-version">
+        <fx:deploy verbose="true" nativeBundles="msi" outdir="${basedir}/${dist.dir}" outfile="${application.title}">
+            <fx:info title="${application.title}" vendor="${application.vendor}"/>            
+            <fx:application name="${application.title}" mainClass="${javafx.main.class}"/>
+            <fx:resources>
+                <fx:fileset dir="${basedir}/${dist.dir}" includes="*.jar"/>
+            </fx:resources>
+        </fx:deploy>
+    </target>
+
+
+
+java --module-path "C:\Program Files\Java\javafx-sdk-23.0.1\lib" --add-modules javafx.controls,javafx.fxml,javafx.graphics -jar JM-InvSM.jar
+java --module-path "C:\Program Files\Java\javafx-sdk-23.0.1\lib" --add-modules javafx.controls,javafx.fxml -jar JM-InvSM.jar
+
+
+--module-path "C:\Program Files\Java\javafx-sdk-23.0.1\lib" --add-modules javafx.controls,javafx.fxml

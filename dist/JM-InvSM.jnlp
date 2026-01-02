@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<jnlp spec="1.0" xmlns:jfx="http://javafx.com" href="JM-InvSM.jnlp">
+  <information>
+    <title>JM-InvSM</title>
+    <vendor>JM-Tecnologias</vendor>
+    <description>null</description>
+    <offline-allowed/>
+  </information>
+  <resources>
+    <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
+    <jar href="JM-InvSM.jar" size="10324369" download="eager" />
+    <jar href="lib\bar-code-scanner-core-3.5.3.jar" size="607650" download="eager" />
+    <jar href="lib\commons-beanutils-1.9.4.jar" size="246918" download="eager" />
+    <jar href="lib\commons-collections4-4.1.jar" size="751238" download="eager" />
+    <jar href="lib\commons-digester-2.1.jar" size="196768" download="eager" />
+    <jar href="lib\commons-logging-1.2.jar" size="61829" download="eager" />
+    <jar href="lib\fop-2.7.jar" size="4444906" download="eager" />
+    <jar href="lib\jSerialComm-2.11.2.jar" size="888094" download="eager" />
+    <jar href="lib\jasperreports-6.21.3.jar" size="5774637" download="eager" />
+    <jar href="lib\mysql-connector-j-8.4.0.jar" size="2533399" download="eager" />
+    <jar href="lib\openpdf-1.3.30.jaspersoft.2.jar" size="2129495" download="eager" />
+  </resources>
+  <jfx:javafx-desc  width="800" height="600" main-class="jminvsm.SysFact"  name="JM-InvSM" />
+  <update check="always"/>
+</jnlp>
