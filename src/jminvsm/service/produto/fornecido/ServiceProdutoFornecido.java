@@ -6,12 +6,12 @@ package jminvsm.service.produto.fornecido;
 
 import java.sql.SQLException;
 import java.util.Map;
+import javafx.collections.ObservableList;
 import jminvsm.dao.produto.fornecido.ProdutoFornecidoDAO;
 import jminvsm.model.armazem.Armazem;
 import jminvsm.model.fornecedor.Fornecedor;
 import jminvsm.model.produto.Produto;
 import jminvsm.model.produto.fornecido.ProdutoFornecido;
-import jminvsm.model.usuario.Usuario;
 import static jminvsm.util.AlertUtilities.showErroAlert;
 import static jminvsm.util.AlertUtilities.showSuccessAlert;
 
@@ -36,8 +36,8 @@ public class ServiceProdutoFornecido {
         this.OpsSuccess = OpsSuccess;
     }
 
-    public void registraProdutoFornecido(Integer id_arm, Integer id_pro, Integer id_for,
-            Usuario user, Integer qtd, String data_fornecida, Double custo,String unidade_fornecida,Integer qtd_por_unidade) {
+    public void registraProdutoFornecido(String code, Integer id_pro, Integer id_arm, Integer id_for,
+             Integer qtdActual, String data_fornecida, Double custo) {
         setOpsSuccess(false);
 
         // Validações básicas antes de registrar a categoria
@@ -48,7 +48,7 @@ public class ServiceProdutoFornecido {
         if (id_for <= 0) {
             id_for = 1;
         }
-        if (qtd <= 0) {
+        if (qtdActual <= 0) {
             showErroAlert("Quantidade não definida!");
             return;
         }
@@ -71,12 +71,11 @@ public class ServiceProdutoFornecido {
         Fornecedor f = new Fornecedor();
         f.setId(id_for);
         pf.setFornecedor(f);
-        pf.setUsuario(user);
-        pf.setQuantidade(qtd);
-        pf.setData_fornecida(data_fornecida);
-        pf.setCusto(custo);
-        pf.setUnidade_fornecida(unidade_fornecida);
-        pf.setQtd_por_unidade(qtd_por_unidade);
+        pf.setCodigo(code);
+        pf.setQuantidadeActual(qtdActual);
+        pf.setDataEntrada(data_fornecida);
+        pf.setCustoUnitario(custo);
+
 
         if (produtoFornecidoDao.addEntity(pf)) {
             setOpsSuccess(true);
@@ -87,5 +86,22 @@ public class ServiceProdutoFornecido {
     public Map<String, Integer> consultaMovimento(Integer cat, Integer arm){
         return produtoFornecidoDao.getMovimentos(cat, arm);
     }
+    
+    public ObservableList<ProdutoFornecido> getLotes(Integer idProd) {
+        return produtoFornecidoDao.getLotesForStock(idProd);
+    }
+    
+    public ProdutoFornecido getLastCodeLote(){
+        return produtoFornecidoDao.getLastCodeLote();
+    }
+    
+    public static void main(String[] args) throws SQLException {
+        ServiceProdutoFornecido dao = new ServiceProdutoFornecido();
+        ObservableList<ProdutoFornecido> lista = dao.getLotes(1);
+        for (ProdutoFornecido x : lista) {
+            System.out.println("Lotes: "+ x.getDataEntrada());
+        }
+    }
+    
 
 }

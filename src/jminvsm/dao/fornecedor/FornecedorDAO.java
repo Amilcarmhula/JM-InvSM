@@ -39,12 +39,11 @@ public class FornecedorDAO implements FornecedorDAOImpl<Fornecedor> {
         boolean isSuccess = false;
 
         try {
-            sql = "insert into fornecedor (tipo,razaosocial,nuit,fk_id_usuario) value (?,?,?,?)";
+            sql = "insert into fornecedor (tipo,razaosocial,nuit) value (?,?,?)";
             ps = con.prepareStatement(sql);
             ps.setString(1, c.getTipo_forn());
             ps.setString(2, c.getRazaosocial_forn());
             ps.setInt(3, c.getNuit_forn());
-            ps.setInt(4, c.getUsuario().getId());
 
             int rowsAffected = ps.executeUpdate();
 
@@ -71,15 +70,14 @@ public class FornecedorDAO implements FornecedorDAOImpl<Fornecedor> {
         boolean isSuccess = false;
 
         try {
-            sql = "update fornecedor set tipo=?, razaosocial=? ,nuit=?, fk_id_usuario=?"
+            sql = "update fornecedor set tipo=?, razaosocial=? ,nuit=?"
                     + " where id=?";
             ps = con.prepareStatement(sql);
 
             ps.setString(1, c.getTipo_forn());
             ps.setString(2, c.getRazaosocial_forn());
             ps.setInt(3, c.getNuit_forn());
-            ps.setInt(4, c.getUsuario().getId());
-            ps.setInt(5, id);
+            ps.setInt(4, id);
 
             int rowsAffected = ps.executeUpdate();
 
@@ -108,7 +106,7 @@ public class FornecedorDAO implements FornecedorDAOImpl<Fornecedor> {
             sql = "SELECT f.id,f.tipo,f.razaosocial,f.nuit, "
                     + "GROUP_CONCAT(CONCAT(ct.contacto) SEPARATOR ' ') AS contatos "
                     + "FROM fornecedor f "
-                    + "LEFT JOIN contacto_fornecedor ct ON ct.fk_id_fornecedor = f.id "
+                    + "LEFT JOIN contacto_fornecedor ct ON ct.idFornecedor = f.id "
                     + "GROUP BY f.id, f.tipo, f.razaosocial, f.nuit;";
             ps = con.prepareStatement(sql);
             ResultSet result = ps.executeQuery();
@@ -185,6 +183,30 @@ public class FornecedorDAO implements FornecedorDAOImpl<Fornecedor> {
                     "Informação", JOptionPane.ERROR_MESSAGE);
         }
         return c;
+    }
+    
+    @Override
+    public ObservableList<Fornecedor> listAllFornecedores() {
+        ObservableList<Fornecedor> lista = FXCollections.observableArrayList();
+        try {
+            sql = "select * from fornecedor";
+            ps = con.prepareStatement(sql);
+            ResultSet result = ps.executeQuery();
+            while (result.next()) {
+                Fornecedor c = new Fornecedor();
+                c.setId(result.getInt("id"));
+                c.setTipo_forn(result.getString("tipo"));
+                c.setRazaosocial_forn(result.getString("razaosocial"));
+                c.setNuit_forn(result.getInt("nuit"));
+                lista.add(c);
+            }
+            result.close();
+            ps.close();
+        } catch (SQLException e) {
+            showDialog("Erro de consulta!", "Detalhes: " + e);
+
+        }
+        return lista;
     }
 
     @Override

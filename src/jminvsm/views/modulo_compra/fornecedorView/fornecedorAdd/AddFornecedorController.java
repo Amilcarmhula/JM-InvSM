@@ -290,7 +290,7 @@ public class AddFornecedorController implements Initializable {
     Funcoes de Adicao de registros
      */
     public void addFornecedor() {
-        serviceFornecedor.registar(txtRazao.getText(), combTipoCliente.getValue(), Integer.valueOf(txtNuit.getText().equals("")?"0":txtNuit.getText()), userData);
+        serviceFornecedor.registar(txtRazao.getText(), combTipoCliente.getValue(), Integer.valueOf(txtNuit.getText().equals("")?"0":txtNuit.getText()));
         if (serviceFornecedor.isOpsSuccess()) {
             showCliente();
             ButtonUtilities.buttonChangeText(btnAddCliente, txtIDCliente);
@@ -299,7 +299,7 @@ public class AddFornecedorController implements Initializable {
 
     public void addContacto() {
         Fornecedor forn = serviceFornecedor.consultaFornecedor(Integer.parseInt(txtIDCliente.getText().equals("")?"0":txtIDCliente.getText()));
-        serviceContacto.registar(txtEmail.getText(), txtContacto.getText(), txtSite.getText(), txtResponsavel.getText(), forn, userData);
+        serviceContacto.registar(txtEmail.getText(), txtContacto.getText(), txtSite.getText(), txtResponsavel.getText(), forn);
         if (serviceContacto.isOpsSuccess()) {
             showContactos();
             restContacto();
@@ -321,7 +321,7 @@ public class AddFornecedorController implements Initializable {
     Funcoes para Actualizar registros
      */
     public void updateFornecedor() {
-        serviceFornecedor.actualizar(Integer.parseInt(txtIDCliente.getText()), txtRazao.getText(), combTipoCliente.getValue(), Integer.valueOf(txtNuit.getText()), userData);
+        serviceFornecedor.actualizar(Integer.parseInt(txtIDCliente.getText()), txtRazao.getText(), combTipoCliente.getValue(), Integer.valueOf(txtNuit.getText()));
         if (serviceFornecedor.isOpsSuccess()) {
             showCliente();
             showContactos();
@@ -330,7 +330,7 @@ public class AddFornecedorController implements Initializable {
     }
 
     public void updateContacto(){
-        serviceContacto.actualizar(Integer.parseInt(txtIDContacto.getText()), txtEmail.getText(), txtContacto.getText(), txtSite.getText(), txtResponsavel.getText(), userData);
+        serviceContacto.actualizar(Integer.parseInt(txtIDContacto.getText()), txtEmail.getText(), txtContacto.getText(), txtSite.getText(), txtResponsavel.getText());
         if (serviceContacto.isOpsSuccess()) {
             showContactos();
             restContacto();

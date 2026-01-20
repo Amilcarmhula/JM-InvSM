@@ -10,7 +10,19 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import jminvsm.model.armazem.Armazem;
+import jminvsm.model.categoria.Categoria;
+import jminvsm.model.imposto.Imposto;
+import jminvsm.model.preco.PrecoProdutoArmazem;
+import jminvsm.model.produto.Produto;
 import jminvsm.model.produto.fornecido.ProdutoFornecido;
+import jminvsm.model.stock.Stock;
+import jminvsm.model.unidade_medida.UnidadeMedida;
+import jminvsm.util.AlertUtilities;
 import static jminvsm.util.AlertUtilities.showDialog;
 import jminvsm.util.Conexao;
 
@@ -32,20 +44,18 @@ public class ProdutoFornecidoDAO implements ProdutoFornecidoDAOImpl<ProdutoForne
     public boolean addEntity(ProdutoFornecido t) {
         boolean isSuccess = false;
         try {
-            sql = "insert into produto_fornecido (quantidade,data_fornecida,custo, fk_id_armazem,fk_id_produto, "
-                    + "fk_id_fornecedor,fk_id_usuario,unidade_fornecida,qtd_por_unidade) value (?,?,?,?,?,?,?,?,?)";
+            sql = "INSERT INTO lote (codigo, idProduto, idArmazem, idFornecedor, dataEntrada, quantidadeAtual, custoUnitario) value (?,?,?,?,?,?,?)";
 
             ps = con.prepareStatement(sql);
 
-            ps.setInt(1, t.getQuantidade());
-            ps.setString(2, t.getData_fornecida());
-            ps.setDouble(3, t.getCusto());
-            ps.setInt(4, t.getArmazem().getId());
-            ps.setInt(5, t.getProduto().getId());
-            ps.setInt(6, t.getFornecedor().getId());
-            ps.setInt(7, t.getUsuario().getId());
-            ps.setString(8, t.getUnidade_fornecida());
-            ps.setInt(9, t.getQtd_por_unidade());
+            ps.setString(1, t.getCodigo());
+            ps.setInt(2, t.getProduto().getId());
+            ps.setInt(3, t.getArmazem().getId());
+            ps.setInt(4, t.getFornecedor().getId());
+            ps.setString(5, t.getDataEntrada());
+            ps.setInt(6, t.getQuantidadeActual());
+            ps.setDouble(7, t.getCustoUnitario());
+
             int rowsAffected = ps.executeUpdate();
 
             if (rowsAffected > 0) {
@@ -64,6 +74,52 @@ public class ProdutoFornecidoDAO implements ProdutoFornecidoDAOImpl<ProdutoForne
             }
         }
         return isSuccess;
+    }
+
+    @Override
+    public ObservableList<ProdutoFornecido> getLotesForStock(Integer idProduto) {
+        ObservableList<ProdutoFornecido> lista = FXCollections.observableArrayList();
+        try {
+            sql = "SELECT "
+                    + "    l.id as idLote, "
+                    + "    l.codigo AS loteCode, "
+                    + "    a.nome AS armazem, "
+                    + "    l.dataEntrada, "
+                    + "    l.quantidadeInicial, "
+                    + "    l.quantidadeAtual, "
+                    + "    l.custoUnitario, "
+                    + "    l.valorTotal, "
+                    + "    l.estado "
+                    + "FROM lote l "
+                    + "JOIN armazem a ON a.id = l.idArmazem "
+                    + "WHERE l.idProduto = ? "
+                    + "ORDER BY l.dataEntrada ASC;";
+            ps = con.prepareStatement(sql);
+            ps.setInt(1, idProduto);
+            ResultSet result = ps.executeQuery();
+            while (result.next()) {
+                ProdutoFornecido l = new ProdutoFornecido();
+                l.setId(result.getInt("idLote"));
+                l.setCodigo(result.getString("loteCode"));
+                Armazem a = new Armazem();
+                a.setNome_arm(result.getString("armazem"));
+                l.setArmazem(a);
+                l.setDataEntrada(result.getString("dataEntrada"));
+                l.setQuantidadeInicial(result.getInt("quantidadeInicial"));
+                l.setQuantidadeActual(result.getInt("quantidadeAtual"));
+                l.setCustoUnitario(result.getDouble("custoUnitario"));
+                l.setValorTotal(result.getDouble("valorTotal"));
+                l.setEstado(result.getString("estado"));
+                lista.add(l);
+            }
+            result.close();
+            ps.close();
+        } catch (SQLException ex) {
+            System.out.println("Erro Detalhes: " + ex);
+            AlertUtilities.showDialog("Erro de consulta", "Detalhes: " + ex);
+
+        }
+        return lista;
     }
 
     /**
@@ -121,17 +177,29 @@ public class ProdutoFornecidoDAO implements ProdutoFornecidoDAOImpl<ProdutoForne
         }
         return mapa;
     }
-    
-//    public static void main(String[] args) throws SQLException {
-//        System.out.println("Teste");
-//        ProdutoFornecidoDAO d = new ProdutoFornecidoDAO();
-//        Map<String, Integer> mapinha = d.getMovimentos(1, 1);
-//        for (Map.Entry<String, Integer> entry : mapinha.entrySet()) {
-//            System.out.println(entry.getKey()+": "+entry.getValue());
-//            
-//        }
-//
-//    }
+
+    public ProdutoFornecido getLastCodeLote() {
+        ProdutoFornecido pf = null;
+        try {
+            sql = "select codigo from lote order by id DESC LIMIT 1";
+            ps = con.prepareStatement(sql);
+            ResultSet result = ps.executeQuery();
+            if (result.next()) {
+                pf = new ProdutoFornecido();
+                pf.setCodigoForSave(result.getString("codigo"));
+            }
+        } catch (SQLException ex) {
+            System.out.println("Erro: " + ex);
+            showDialog("Erro de consulta", "Detalhes: " + ex);
+        }
+        return pf;
+    }
+
+    public static void main(String[] args) throws SQLException {
+        System.out.println("Teste");
+        ProdutoFornecidoDAO d = new ProdutoFornecidoDAO();
+        System.out.println(d.getLastCodeLote().getCodigo());
+    }
 }
 
 //    @Override

@@ -8,7 +8,7 @@
   </information>
   <resources>
     <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
-    <jar href="JM-InvSM.jar" size="10324369" download="eager" />
+    <jar href="JM-InvSM.jar" size="10354356" download="eager" />
     <jar href="lib\bar-code-scanner-core-3.5.3.jar" size="607650" download="eager" />
     <jar href="lib\commons-beanutils-1.9.4.jar" size="246918" download="eager" />
     <jar href="lib\commons-collections4-4.1.jar" size="751238" download="eager" />
