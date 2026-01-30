@@ -83,7 +83,9 @@ public class VendasPorFacturacaoViewController implements Initializable {
     private Usuario userData;
 
     @FXML
-    private Button btnAddItem;
+    private Button btnGeraFactura;
+    @FXML
+    private Button btnNovaFactura;
 
     @FXML
     private Button btnCancelaFactura;
@@ -108,24 +110,25 @@ public class VendasPorFacturacaoViewController implements Initializable {
 
     @FXML
     private Label labTotalGeral;
-    
+
     @FXML
     private TableView<Stock> tabelaProduto;
     @FXML
     private TableColumn<Stock, String> IDtabelaProduto;
-     @FXML
+    @FXML
     private TableColumn<Stock, String> artigotabelaProduto;
     @FXML
     private TableColumn<Stock, String> descricaotabelaProduto;
-    
+
     @FXML
     private TextField txtPesquisar;
     private ServiceArmazem serviceArmazem;
     private String nomeArmazemFilter;
     private Integer idArmazem = null;
     @FXML
+    private Label labSaldoStock;
+    @FXML
     private ComboBox<String> cBoxArmazem;
-
 
     @FXML
     private TableView<Item> tabelaItens;
@@ -150,6 +153,8 @@ public class VendasPorFacturacaoViewController implements Initializable {
 
     @FXML
     private TableColumn<Item, Integer> idtabelaItens;
+    @FXML
+    private TableColumn<Item, String> reftabelaItens;
 
     @FXML
     private TableColumn<Item, String> taxatabelaItens;
@@ -180,11 +185,19 @@ public class VendasPorFacturacaoViewController implements Initializable {
     private Label labDataInicial;
 
     @FXML
+    private Label labTipoCliente;
+    @FXML
+    private Label labVendedor;
+    @FXML
+    private Label labTempoRelacaoCliente;
+    @FXML
     private TextField txtIDCliente;
     @FXML
     private TextField txtEnderecoCliente;
     @FXML
     private TextField txtNomeCLiente;
+    @FXML
+    private TextField txtRazaoSocialCLiente;
     @FXML
     private TextField txtNuitCLiente;
     @FXML
@@ -198,11 +211,12 @@ public class VendasPorFacturacaoViewController implements Initializable {
 
     @FXML
     private ComboBox<String> combTipoDoc;
+    @FXML
+    private ComboBox<String> combCondPagamento;
 
     private Map<Integer, Stock> mapaProdutos;
 
-    private Random randNum;
-
+//    private Random randNum;
     public void getTaxasView(ActionEvent e) {
         SysFact.setData(null);
         LoadAndMoveUtilities.showAsPopUP(e, null);
@@ -216,7 +230,7 @@ public class VendasPorFacturacaoViewController implements Initializable {
     }
 
     public void getSearchCliente(MouseEvent mouseEvt) {
-        if (mouseEvt.getClickCount() == 1) {
+        if (mouseEvt.getClickCount() == 2) {
             SysFact.setData(null);
             LoadAndMoveUtilities.showAsPopUP(null, mouseEvt);
             LoadAndMoveUtilities.loadFXML(Modality.APPLICATION_MODAL, "/jminvsm/views/modulo_venda/vendaView/searchCliente/clienteSearch.fxml");
@@ -234,24 +248,65 @@ public class VendasPorFacturacaoViewController implements Initializable {
     public void getSearchClienteKEY(KeyEvent keyEvt) throws SQLException {
         if (keyEvt.getCode().equals(KeyCode.ENTER)) {
 
-            Cliente x = serviceCliente.getClienteCompletoByID(Integer.valueOf(txtIDCliente.getText()));
-            if (x != null) {
-                txtIDCliente.setText(x.getId() + "");
-                txtEnderecoCliente.setText(x.printEnderecos());
-                txtNomeCLiente.setText(x.getRazao_cli());
-                txtNuitCLiente.setText(x.getNuit_cli() + "");
-                txtContactoCLiente.setText(x.printContatos());
-                txtEmailCLiente.setText(x.getContactoCliente().getEmail_cli());
+            Cliente c = serviceCliente.getClienteCompletoByID(Integer.valueOf(txtIDCliente.getText()));
+            if (c != null) {
+                txtIDCliente.setText(c.getId() + "");
+                txtEnderecoCliente.setText(c.printEnderecos());
+                txtNomeCLiente.setText(c.getNome_cli());
+                labTipoCliente.setText(c.getTipo());
+                txtRazaoSocialCLiente.setText(c.getRazao_cli());
+                labTempoRelacaoCliente.setText(c.getTempoRelacao() + " Dias");
+                txtNuitCLiente.setText(c.getNuit_cli() + "");
+                txtContactoCLiente.setText(c.printContatos());
+                txtEmailCLiente.setText(c.getContactoCliente().getEmail_cli());
+                labVendedor.setText(userData.getUsuario());
             }
 
         }
     }
 
-    public void selecionaFactura() {
+    private ObservableList<DocumentosComerciais> listaDocComercial;
+    private Map<String, DocumentosComerciais> mapaDocComercial;
+
+    public void populateComboFactura() throws SQLException {
+        listaDocComercial = serDocs.getDocumentos();
+        mapaDocComercial = new HashMap<>();
+        List<String> lista = new ArrayList<>();
+        for (DocumentosComerciais doc : listaDocComercial) {
+            mapaDocComercial.put(doc.getNome_doc(), doc);
+            if (doc.getNome_doc().startsWith("Fatura")) {
+                lista.add(doc.getNome_doc());
+            }
+        }
+        combTipoDoc.setItems(FXCollections.observableArrayList(lista));
+    }
+
+    public void geraFactura(ActionEvent evt) {
         String tipoDoc = combTipoDoc.getSelectionModel().getSelectedItem();
-        DocumentosComerciais doc = mapaDocComercial.get(tipoDoc);
-        labNumeroFactura.setText(InvoiceUtilities.invoiceNumber(doc.getId()));
-        labValidade.setText(InvoiceUtilities.datePlusXDays(doc.getDiasUteis()));
+        String condPagamento = combCondPagamento.getSelectionModel().getSelectedItem();
+        if (tipoDoc == null || condPagamento == null) {
+            AlertUtilities.showDialog("Erro", "Tipo de Factura ou Condicao de pagamento nao selecionado");
+
+        } else {
+            DocumentosComerciais doc = mapaDocComercial.get(tipoDoc);
+            labNumeroFactura.setText(InvoiceUtilities.invoiceNumber(doc.getId()));
+            labValidade.setText(InvoiceUtilities.datePlusXDays(doc.getDiasUteis()));
+            combTipoDoc.setDisable(true);
+            combCondPagamento.setDisable(true);
+            btnGeraFactura.setDisable(true);
+            btnNovaFactura.setDisable(false);
+        }
+    }
+
+    public void novaFactura(ActionEvent evt) {
+        combTipoDoc.setDisable(false);
+        combCondPagamento.setDisable(false);
+        btnGeraFactura.setDisable(false);
+        btnNovaFactura.setDisable(true);
+        combTipoDoc.setPromptText("Selecionar");
+        combCondPagamento.setPromptText("Selecionar");
+        labNumeroFactura.setText("...");
+        labValidade.setText("...");
 
     }
 
@@ -272,14 +327,18 @@ public class VendasPorFacturacaoViewController implements Initializable {
                 if (!oldValue && newValue) {
                     if (SysFact.getData() instanceof Cliente) {
                         Cliente c = (Cliente) SysFact.getData();
-                        Cliente x = serviceCliente.getClienteCompletoByID(c.getId());
-                        if (x != null) {
-                            txtIDCliente.setText(x.getId() + "");
-                            txtEnderecoCliente.setText(x.printEnderecos());
-                            txtNomeCLiente.setText(x.getRazao_cli());
-                            txtNuitCLiente.setText(x.getNuit_cli() + "");
-                            txtContactoCLiente.setText(x.printContatos());
-                            txtEmailCLiente.setText(x.getContactoCliente().getEmail_cli());
+//                        Cliente x = serviceCliente.getClienteCompletoByID(c.getId());
+                        if (c != null) {
+                            txtIDCliente.setText(c.getId() + "");
+                            txtEnderecoCliente.setText(c.printEnderecos());
+                            txtNomeCLiente.setText(c.getNome_cli());
+                            labTipoCliente.setText(c.getTipo());
+                            txtRazaoSocialCLiente.setText(c.getRazao_cli());
+                            labTempoRelacaoCliente.setText(c.getTempoRelacao() + " Dias");
+                            txtNuitCLiente.setText(c.getNuit_cli() + "");
+                            txtContactoCLiente.setText(c.printContatos());
+                            txtEmailCLiente.setText(c.getContactoCliente().getEmail_cli());
+                            labVendedor.setText(userData.getUsuario());
                         }
                     }
                 }
@@ -313,9 +372,9 @@ public class VendasPorFacturacaoViewController implements Initializable {
         tabelaItens.setEditable(true);
 
         idtabelaItens.setCellValueFactory(new PropertyValueFactory<>("id"));
+        reftabelaItens.setCellValueFactory(cellData
+                -> new SimpleStringProperty(cellData.getValue().getProduto().getId() + "#" + cellData.getValue().getArmazem().getId()));
         nometabelaItens.setCellValueFactory(new PropertyValueFactory<>("nomeProduto"));
-//        precotabelaItens.setCellValueFactory(cellData
-//                -> new SimpleStringProperty(String.valueOf(cellData.getValue().getPrecoProdutoArmazem().getPrecoVenda()) + " MT"));
         unidadetabelaItens.setCellValueFactory(cellData
                 -> new SimpleStringProperty(String.valueOf(cellData.getValue().getProduto().getUnidadeMedida().getSigla())));
 
@@ -326,22 +385,18 @@ public class VendasPorFacturacaoViewController implements Initializable {
             public void handle(CellEditEvent<Item, Integer> event) {
                 Item item = event.getRowValue(); // Obtém o objeto da linha
                 item.setQuantidade(event.getNewValue()); // Atualiza a propriedade
-
-//                Item i = new Item();
-//                i.calculateSubtotal_onTable(item,tabelaItens);
+                Item i = new Item();
+                i.calculateSubtotal_onTable(item, tabelaItens);
                 displayPrice();
             }
         });
         lotetabelaItens.setCellValueFactory(cellData
-                -> new SimpleStringProperty(String.valueOf(cellData.getValue().getProduto().getTipoProduto())));
+                -> new SimpleStringProperty(String.valueOf(cellData.getValue().getProduto().getUnidadesPorTipo())));
         precoFinaltabelaItens.setCellValueFactory(cellData
                 -> new SimpleStringProperty(String.valueOf("x " + cellData.getValue().getPrecoProdutoArmazem().getPrecoFinal()) + " MT"));
         taxatabelaItens.setCellValueFactory(cellData
                 -> new SimpleStringProperty(String.valueOf(cellData.getValue().getProduto().getImposto().getPercentagem()) + "%"));
         subTotaltabelaItens.setCellValueFactory(new PropertyValueFactory<>("subtotal"));
-        randNum = new Random();
-        mapaStock = new HashMap<>();
-
     }
 
     @Override
@@ -356,9 +411,10 @@ public class VendasPorFacturacaoViewController implements Initializable {
         // leitor.parar(); // Chame quando quiser fechar a porta
 
         this.userData = SysFact.getUserData();
+        System.out.println("User: " + userData.getUsuario());
         this.empresaData = SysFact.getEmpresaData();
         try {
-            serviceStock= new ServiceStock();
+            serviceStock = new ServiceStock();
             serviceArmazem = new ServiceArmazem();
             serDesconto = new ServiceDesconto();
             serviceCliente = new ServiceCliente();
@@ -366,7 +422,7 @@ public class VendasPorFacturacaoViewController implements Initializable {
             labDataInicial.setText(InvoiceUtilities.actualDate());
             populateComboFactura();
             getDataOnFocus();
-            
+
             showProdutos();
             populateComb_Armazem();
         } catch (SQLException ex) {
@@ -377,84 +433,10 @@ public class VendasPorFacturacaoViewController implements Initializable {
             idArmazem = mapaArmazens.get(data).getId();
             showProdutos();
         });
+        combCondPagamento.setItems(FXCollections.observableArrayList("A vista", "Parcelado"));
     }
 
-    private ObservableList<DocumentosComerciais> listaDocComercial;
-    private Map<String, DocumentosComerciais> mapaDocComercial;
-
-    public void populateComboFactura() throws SQLException {
-        listaDocComercial = serDocs.getDocumentos();
-        mapaDocComercial = new HashMap<>();
-        List<String> lista = new ArrayList<>();
-        for (DocumentosComerciais doc : listaDocComercial) {
-            mapaDocComercial.put(doc.getNome_doc(), doc);
-            if (doc.getNome_doc().startsWith("Fatura")) {
-                lista.add(doc.getNome_doc());
-            }
-
-        }
-        combTipoDoc.setItems(FXCollections.observableArrayList(lista));
-    }
-
-    public void populateTableItems(ActionEvent e) {
-        int qtd;
-        if (txtID.getText() == null || txtID.getText().isEmpty()) {
-            showErroAlert("Produto/Servico nao selecionado!");
-            return;
-        }
-
-        if (txtQuantidade.getText() == null || txtQuantidade.getText().isEmpty()) {
-            qtd = 1;
-        } else {
-            qtd = Integer.parseInt(txtQuantidade.getText());
-        }
-
-        int id = Integer.parseInt(txtID.getText());
-        Stock x = mapaStock.get(id);
-        Item i = new Item();
-        i.setId(id);
-        i.setQuantidade(qtd);
-        double subtotal;
-        /*
-        Condicao a baixo deve ser revisada em funcao do tipo de factura a ser emitida
-         */
-        if (combTipoDoc.getValue() != null) {
-            if (combTipoDoc.getValue().equals("Fatura Simplificada")) {
-                subtotal = qtd * x.getPrecoProdutoArmazem().getPrecoFinal();
-            } else {
-                subtotal = qtd * x.getPrecoProdutoArmazem().getPrecoFinal();
-            }
-        } else {
-            AlertUtilities.showDialog("Erro", "Tipo de documento nao selecionado! Selecione o tipo de factura");
-            return;
-        }
-        i.setSubtotal(subtotal);
-        i.setUnidade_vendida(x.getProduto().getTipoProduto());
-        i.setQtd_por_unidade(x.getProduto().getUnidadesPorTipo());
-        i.setProduto(x.getProduto());
-        i.setPrecoProdutoArmazem(x.getPrecoProdutoArmazem());
-        Factura f = new Factura();
-        f.setNumero_fac(labNumeroFactura.getText());
-        i.setFactura(f);
-        i.setUsuario(userData);
-        Armazem a = new Armazem();
-        a.setId(x.getArmazem().getId());
-        i.setArmazem(a);
-
-//        if (x.isControle_stock() == true) {
-//            if (/*x.getStock().getSaldo() >*/ qtd < qtd_por_unidade) {
-//                tabelaItens.getItems().add(i);
-//                resetProduto();
-//                displayPrice();
-//            } else {
-//                AlertUtilities.showDialog("Erro", "Stock baixo. Produto nao pode ser comercializado!");
-//            }
-//        } else {
-        tabelaItens.getItems().add(i);
-        resetProduto();
-        displayPrice();
-//        }
-    }
+    
 
     public void radioParcelado() {
         String condicao;
@@ -523,8 +505,8 @@ public class VendasPorFacturacaoViewController implements Initializable {
         List<Item> listaItems = new ArrayList<>();
         for (Item item : itens) {
             i = new Item();
-            Stock p = mapaStock.get(item.getId());
-            
+            Stock p = mapaStock.get(item.getRef());
+
             i.setQuantidade(item.getQuantidade());
             i.setSubtotal(item.getSubtotal());
             i.setUnidade_vendida(item.getUnidade_vendida());
@@ -547,10 +529,9 @@ public class VendasPorFacturacaoViewController implements Initializable {
         double taxa = 0;
         double total = 0;
         for (Item item : itens) {
-            Stock x = mapaStock.get(item.getId());
+            Stock x = mapaStock.get(item.getRef());
             if (combTipoDoc.getValue().equals("Fatura Simplificada")) {
                 subtotal += item.getQuantidade() * x.getPrecoProdutoArmazem().getPrecoFinal();
-//                taxa += subtotal - (item.getQuantidade() * x.getProduto().getPrecoVenda().getPrecoNormal());
                 taxa += (item.getQuantidade() * x.getPrecoProdutoArmazem().getPrecoVenda()) - (item.getQuantidade() * x.getPrecoProdutoArmazem().getPrecoBase());
                 desc += item.getQuantidade() * x.getPrecoProdutoArmazem().getPrecoVenda() - (item.getQuantidade() * x.getPrecoProdutoArmazem().getPrecoFinal());
                 total = subtotal;
@@ -624,6 +605,11 @@ public class VendasPorFacturacaoViewController implements Initializable {
     
     
     
+    
+    
+    
+    
+
     private ObservableList<Stock> listaStock;
     private Map<String, Stock> mapaStock;
 
@@ -635,14 +621,11 @@ public class VendasPorFacturacaoViewController implements Initializable {
         }
 
         IDtabelaProduto.setCellValueFactory(cellData
-                -> new SimpleStringProperty(cellData.getValue().getProduto().getId()+"#"+cellData.getValue().getArmazem().getId()));
+                -> new SimpleStringProperty(cellData.getValue().getProduto().getId() + "#" + cellData.getValue().getArmazem().getId()));
         artigotabelaProduto.setCellValueFactory(cellData
                 -> new SimpleStringProperty(cellData.getValue().getProduto().getNome()));
         descricaotabelaProduto.setCellValueFactory(cellData
                 -> new SimpleStringProperty(cellData.getValue().getProduto().getDescricao()));
-//        armazemtabelaProduto.setCellValueFactory(cellData
-//                -> new SimpleStringProperty(cellData.getValue().getArmazem().getNome_arm()));
-
 
         FilteredList<Stock> dadosFiltrados = new FilteredList<>(listaStock, b -> true);
 
@@ -663,13 +646,65 @@ public class VendasPorFacturacaoViewController implements Initializable {
 
             });
         });
-        
+
         SortedList<Stock> sortedData = new SortedList<>(dadosFiltrados);
         sortedData.comparatorProperty().bind(tabelaProduto.comparatorProperty());
         //
         tabelaProduto.setItems(sortedData);
     }
-    
+
+    public void selecionaProduto(MouseEvent event) {
+        Stock x = tabelaProduto.getSelectionModel().getSelectedItem();
+        if (x != null) {
+            Stock s = mapaStock.get(x.getProduto().getId() + "#" + x.getArmazem().getId());
+            labSaldoStock.setText(s.getSaldo() + "");
+            if (event.getClickCount() == 2) {
+                populateTableItems(s);
+            }
+        }
+
+    }
+    public void populateTableItems(Stock s) {
+        int qtd = 1;
+        Item i = new Item();
+        i.setQuantidade(qtd);
+//        popular tabela itens
+
+        i.setRef(s.getProduto().getId() + "#" + s.getArmazem().getId());
+        i.setQuantidade(1);
+        double subtotal;
+        /*
+        Condicao a baixo deve ser revisada em funcao do tipo de factura a ser emitida
+         */
+        if (combTipoDoc.getValue() != null) {
+            if (combTipoDoc.getValue().equals("Fatura Simplificada")) {
+                subtotal = qtd * s.getPrecoProdutoArmazem().getPrecoFinal();
+            } else {
+                subtotal = qtd * s.getPrecoProdutoArmazem().getPrecoFinal();
+            }
+        } else {
+            AlertUtilities.showDialog("Erro", "Tipo de documento nao selecionado! Selecione o tipo de factura");
+            return;
+        }
+        i.setSubtotal(subtotal);
+        i.setUnidade_vendida(s.getProduto().getTipoProduto());
+        i.setQtd_por_unidade(s.getProduto().getUnidadesPorTipo());
+        i.setProduto(s.getProduto());
+        i.setPrecoProdutoArmazem(s.getPrecoProdutoArmazem());
+        Factura f = new Factura();
+        f.setNumero_fac(labNumeroFactura.getText());
+        i.setFactura(f);
+        i.setUsuario(userData);
+        Armazem a = new Armazem();
+        a.setId(s.getArmazem().getId());
+        i.setArmazem(a);
+
+        tabelaItens.getItems().add(i);
+//        resetProduto();
+        displayPrice();
+//        }
+    }
+
     private ObservableList<Armazem> storeList;
     private Map<String, Armazem> mapaArmazens;
 
@@ -683,6 +718,5 @@ public class VendasPorFacturacaoViewController implements Initializable {
         }
         cBoxArmazem.setItems(FXCollections.observableArrayList(listaArm));
     }
-
 
 }
